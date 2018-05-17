@@ -51,12 +51,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommandLineArguments.cs" />
+    <Compile Include="Commands\BlockingQueue.cs" />
     <Compile Include="Commands\CommandFactory.cs" />
     <Compile Include="Commands\CommandType.cs" />
     <Compile Include="Commands\CompressCommand.cs" />
     <Compile Include="Commands\DecompressCommand.cs" />
+    <Compile Include="Commands\DecompressCommandContext.cs" />
     <Compile Include="Commands\ICommand.cs" />
-    <Compile Include="Commands\CommandContext.cs" />
+    <Compile Include="Commands\CompressCommandContext.cs" />
+    <Compile Include="Commands\ICommandContext.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="FileToRead.cs" />
     <Compile Include="FileToWrite.cs" />
     <Compile Include="Program.cs" />

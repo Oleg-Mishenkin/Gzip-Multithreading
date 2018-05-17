@@ -5,20 +5,20 @@ namespace GzipAssessment.Commands
 {
     public class DecompressCommand : ICommand
     {
-        private readonly CommandContext _context;
+        private readonly DecompressCommandContext _context;
         private readonly FileToRead _readFile;
         private readonly FileToWrite _writeFile;
 
-        public DecompressCommand(CommandContext context, string readFile, string writeFile)
+        public DecompressCommand(ICommandContext context, string readFile, string writeFile)
         {
-            _context = context;
+            _context = (DecompressCommandContext)context;
             _readFile = new FileToRead(readFile);
             _writeFile = new FileToWrite(writeFile);
         }
 
         public void Execute()
         {
-            for (var threadCurrentBlock = _context.SetCurrentBlock(); threadCurrentBlock * _context.BlockSize <= _readFile.FileLength; threadCurrentBlock = _context.SetCurrentBlock())
+            for (var threadCurrentBlock = _context.SetNextCurrentBlock(); threadCurrentBlock * _context.BlockSize <= _readFile.FileLength; threadCurrentBlock = _context.SetNextCurrentBlock())
             {
                 using (var from = new MemoryStream(_readFile.ReadBytes(threadCurrentBlock * _context.BlockSize, _context.BlockSize), 0, _context.BlockSize))
                 {
