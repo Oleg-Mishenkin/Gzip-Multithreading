@@ -34,7 +34,7 @@ namespace GzipAssessment
             get { return _fileLength; }
         }
 
-        public Stream GetStream
+        public FileStream Stream
         {
             get { return _fileStream; }
         }

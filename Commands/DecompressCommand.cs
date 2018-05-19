@@ -1,54 +1,31 @@
-﻿using System.IO;
-using System.IO.Compression;
-
-namespace GzipAssessment.Commands
+﻿namespace GzipAssessment.Commands
 {
     public class DecompressCommand : ICommand
     {
         private readonly DecompressCommandContext _context;
-        private readonly FileToRead _readFile;
-        private readonly FileToWrite _writeFile;
 
-        public DecompressCommand(ICommandContext context, string readFile, string writeFile)
+        public DecompressCommand(ICommandContext context)
         {
             _context = (DecompressCommandContext)context;
-            _readFile = new FileToRead(readFile);
-            _writeFile = new FileToWrite(writeFile);
         }
 
         public void Execute()
         {
-            for (var threadCurrentBlock = _context.SetNextCurrentBlock(); threadCurrentBlock * _context.BlockSize <= _readFile.FileLength; threadCurrentBlock = _context.SetNextCurrentBlock())
+            while (_context.BlockQueue.TryDequeue(out var currentProcessedBlock))
             {
-                using (var from = new MemoryStream(_readFile.ReadBytes(threadCurrentBlock * _context.BlockSize, _context.BlockSize), 0, _context.BlockSize))
-                {
-                    using (GZipStream decompressedStream = new GZipStream(from, CompressionMode.Decompress))
-                    {
-                        using (var to = new MemoryStream())
-                        {
-                            decompressedStream.CopyTo(to);
-                            _context.GetCurrentThreadEvent(threadCurrentBlock).WaitOne();
-                            _writeFile.WriteToFile(to.ToArray());
-                        }
-                    }
-                }
+                var decompressedBytes = GZipHelper.Decompress(currentProcessedBlock.BlockData);
+                _context.GetCurrentThreadEvent(currentProcessedBlock.BlockIndex).WaitOne();
+                _context.WriteFile.WriteToFile(decompressedBytes);
 
-                _context.GetNextThreadEvent(threadCurrentBlock).Set();
-                CheckWorkDone(threadCurrentBlock);
+                _context.GetNextThreadEvent(currentProcessedBlock.BlockIndex).Set();
+                CheckWorkDone(currentProcessedBlock);
             }
         }
 
-        private void CheckWorkDone(int threadCurrentBlock)
+        private void CheckWorkDone(ProcessingBlock dataBlock)
         {
-            // For the last block we should notify Main thread about completion. We can use Barrier class here for that, but it's in .NET 4.0
-            if ((threadCurrentBlock + 1) * _context.BlockSize > _readFile.FileLength)
+            if (dataBlock.IsLastBlock)
                 _context.OnWorkDone();
-        }
-
-        public void Dispose()
-        {
-            _readFile.Dispose();
-            _writeFile.Dispose();
         }
     }
 }

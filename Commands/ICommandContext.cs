@@ -1,6 +1,8 @@
-﻿namespace GzipAssessment.Commands
+﻿using System;
+
+namespace GzipAssessment.Commands
 {
-    public interface ICommandContext
+    public interface ICommandContext : IDisposable
     {
         void Proceed();
     }

@@ -1,8 +1,6 @@
-﻿using System;
-
-namespace GzipAssessment.Commands
+﻿namespace GzipAssessment.Commands
 {
-    public interface ICommand : IDisposable
+    public interface ICommand
     {
         void Execute();
     }

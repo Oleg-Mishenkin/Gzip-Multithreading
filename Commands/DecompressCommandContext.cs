@@ -1,64 +1,71 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Threading;
 
 namespace GzipAssessment.Commands
 {
-    public class DecompressCommandContext : ICommandContext
+    public class DecompressCommandContext : BaseCommandContext
     {
-        private readonly int _blockSize;
-        private int _currentBlockIndex = -1;
-        private ReadOnlyCollection<AutoResetEvent> _threadEvents;
-
-        private AutoResetEvent _workDoneEvent = new AutoResetEvent(false);
-
-        public DecompressCommandContext(int blockSize, int threadCount)
+        public DecompressCommandContext(int blockSize, int threadCount, string readFile, string writeFile) : base(blockSize, threadCount, readFile, writeFile)
         {
-            _blockSize = blockSize;
-            InitThreadEvents(threadCount);
         }
 
-        private void InitThreadEvents(int threadCount)
+        public override void Proceed()
         {
-            List<AutoResetEvent> threadEvents = new List<AutoResetEvent>();
-            threadEvents.Add(new AutoResetEvent(true));
+            StartProducer();
 
-            for (int i = 1; i < threadCount; i++)
+            WorkDoneEvent.WaitOne();
+            BlockQueue.Close();
+        }
+
+        private void StartProducer()
+        {
+            var fs = ReadFile.Stream;
+            var gzipHeaderMatches = 0;
+            List<byte> currentDataBlock = new List<byte>();
+            int blockNumber = 0;
+
+            byte[] initBuffer = new byte[Constants.GZipDefaultHeader.Length + 1];
+            int currentStreamPosition = fs.Read(initBuffer, 0, Constants.GZipDefaultHeader.Length + 1); // read first file gzip header plus additional data byte
+
+            currentDataBlock.AddRange(initBuffer);
+
+            while (currentStreamPosition < ReadFile.FileLength)
             {
-                threadEvents.Add(new AutoResetEvent(false));
+                var currentByte = fs.ReadByte();
+                currentDataBlock.Add((byte) currentByte);
+
+                if (currentStreamPosition == ReadFile.FileLength - 1) // last block of data
+                {
+                    BlockQueue.Enqueue(new ProcessingBlock(blockNumber, currentDataBlock.ToArray(), true));
+                    break;
+                }
+
+                if (currentByte == Constants.GZipDefaultHeader[gzipHeaderMatches])
+                {
+                    if (gzipHeaderMatches == Constants.GZipDefaultHeader.Length - 1)
+                    {
+                        var nextBlockHeader = currentDataBlock.GetRange(
+                            currentDataBlock.Count - Constants.GZipDefaultHeader.Length,
+                            Constants.GZipDefaultHeader.Length);
+                        currentDataBlock.RemoveRange(currentDataBlock.Count - Constants.GZipDefaultHeader.Length,
+                            Constants.GZipDefaultHeader.Length); // we've found the beginning of the next block
+                        BlockQueue.Enqueue(new ProcessingBlock(blockNumber, currentDataBlock.ToArray(), false));
+
+                        currentDataBlock = nextBlockHeader;
+                        blockNumber++;
+                        gzipHeaderMatches = 0;
+                    }
+                    else
+                    {
+                        gzipHeaderMatches++;
+                    }
+                }
+                else
+                {
+                    gzipHeaderMatches = 0;
+                }
+
+                currentStreamPosition++;
             }
-
-            _threadEvents = new ReadOnlyCollection<AutoResetEvent>(threadEvents);
-        }
-
-        public int SetNextCurrentBlock()
-        {
-            return Interlocked.Increment(ref _currentBlockIndex);
-        }
-
-        public int BlockSize
-        {
-            get { return _blockSize; }
-        }
-
-        public void OnWorkDone()
-        {
-            _workDoneEvent.Set();
-        }
-
-        public void Proceed()
-        {
-            _workDoneEvent.WaitOne();
-        }
-
-        public AutoResetEvent GetCurrentThreadEvent(int order)
-        {
-            return _threadEvents[order % _threadEvents.Count];
-        }
-
-        public AutoResetEvent GetNextThreadEvent(int order)
-        {
-            return _threadEvents[(order + 1) % _threadEvents.Count];
         }
     }
 }
