@@ -11,7 +11,7 @@
 
         public void Execute()
         {
-            for (var threadCurrentBlock = _context.SetNextCurrentBlock(); threadCurrentBlock * _context.BlockSize <= _context.ReadFile.FileLength; threadCurrentBlock = _context.SetNextCurrentBlock())
+            /*for (var threadCurrentBlock = _context.SetNextCurrentBlock(); threadCurrentBlock * _context.BlockSize <= _context.ReadFile.FileLength; threadCurrentBlock = _context.SetNextCurrentBlock())
             {
                 byte[] data = _context.ReadFile.ReadBytes(threadCurrentBlock * _context.BlockSize, _context.BlockSize);
                 var compressedBytes = GZipHelper.Compress(data);
@@ -21,13 +21,23 @@
 
                 _context.GetNextThreadEvent(threadCurrentBlock).Set();
                 CheckWorkDone(threadCurrentBlock);
+            }*/
+
+            while (_context.BlockQueue.TryDequeue(out var currentProcessedBlock))
+            {
+                var compressedBytes = GZipHelper.Compress(currentProcessedBlock.BlockData);
+
+                _context.GetCurrentThreadEvent(currentProcessedBlock.BlockIndex).WaitOne();
+                _context.WriteFile.WriteToFile(compressedBytes);
+
+                _context.GetNextThreadEvent(currentProcessedBlock.BlockIndex).Set();
+                CheckWorkDone(currentProcessedBlock);
             }
         }
 
-        private void CheckWorkDone(int threadCurrentBlock)
+        private void CheckWorkDone(ProcessingBlock dataBlock)
         {
-            // For the last block we should notify Main thread about completion. We can use Barrier class here for that, but it's in .NET 4.0
-            if ((threadCurrentBlock + 1) * _context.BlockSize > _context.ReadFile.FileLength)
+            if (dataBlock.IsLastBlock)
                 _context.OnWorkDone();
         }
     }

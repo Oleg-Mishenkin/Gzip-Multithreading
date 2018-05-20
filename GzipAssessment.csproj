@@ -8,9 +8,10 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>GzipAssessment</RootNamespace>
     <AssemblyName>GzipAssessment</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -33,20 +34,17 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
-      <HintPath>packages\NLog.4.5.4\lib\net45\NLog.dll</HintPath>
+      <HintPath>packages\NLog.4.5.4\lib\net35\NLog.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
-    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -61,6 +59,7 @@
     <Compile Include="Commands\ICommand.cs" />
     <Compile Include="Commands\CompressCommandContext.cs" />
     <Compile Include="Commands\ICommandContext.cs" />
+    <Compile Include="Commands\ProgressChangedEventArgs.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="FileToRead.cs" />
     <Compile Include="FileToWrite.cs" />

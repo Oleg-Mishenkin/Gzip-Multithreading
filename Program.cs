@@ -15,14 +15,13 @@ namespace GzipAssessment
             try
             {
                 var commandLineArguments = new CommandLineArguments(args);
-                int iterations = 10;
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
+
                 DoWork(commandLineArguments, Environment.ProcessorCount);
                 
                 stopWatch.Stop();
-                _logger.Info(
-                    $"Finished in {stopWatch.ElapsedMilliseconds}ms. Avg compression time is {stopWatch.ElapsedMilliseconds / iterations}ms");
+                _logger.Info($"Finished in {stopWatch.ElapsedMilliseconds}ms");
             }
             catch (UserReadableException e)
             {
@@ -41,6 +40,11 @@ namespace GzipAssessment
         {
             using (var executionContext = CommandFactory.CreateCommandContext(Constants.BlockSize, threadCount, arguments))
             {
+                executionContext.ProgressChanged += (sender, e) =>
+                {
+                    Console.SetCursorPosition(0, 1);
+                    Console.Out.Write("Completed " + ((ProgressChangedEventArgs)e).PercentageCompleted + "%"); };
+
                 var command = CommandFactory.CreateCommand(executionContext, arguments);
                 for (int i = 0; i < threadCount; i++)
                 {
@@ -49,6 +53,8 @@ namespace GzipAssessment
                 }
 
                 executionContext.Proceed();
+
+                Console.Out.WriteLine();
             }
         }
     }

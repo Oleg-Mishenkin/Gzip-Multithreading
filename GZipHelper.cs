@@ -13,7 +13,13 @@ namespace GzipAssessment
                 {
                     using (Stream csStream = new GZipStream(inputStream, CompressionMode.Decompress))
                     {
-                        csStream.CopyTo(outputStream);
+                        byte[] buffer = new byte[64 * 1024];
+                        int bytesRead;
+
+                        while ((bytesRead = csStream.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            outputStream.Write(buffer, 0, bytesRead);
+                        }
                     }
                 }
                 return outputStream.ToArray();

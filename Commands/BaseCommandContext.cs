@@ -54,7 +54,25 @@ namespace GzipAssessment.Commands
             WriteFile.Dispose();
         }
 
-        public abstract void Proceed();
+        public abstract void StartProducer();
+
+        public void Proceed()
+        {
+            StartProducer();
+
+            WorkDoneEvent.WaitOne();
+            BlockQueue.Close();
+        }
+
+        public event EventHandler ProgressChanged;
+
+        protected void OnProgressChanged(ProgressChangedEventArgs eventArgs)
+        {
+            if (ProgressChanged != null)
+            {
+                ProgressChanged(this, eventArgs);
+            }
+        }
 
         private void InitThreadEvents(int threadCount)
         {

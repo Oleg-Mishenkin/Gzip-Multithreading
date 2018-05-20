@@ -1,4 +1,5 @@
-﻿namespace GzipAssessment.Commands
+﻿
+namespace GzipAssessment.Commands
 {
     public class DecompressCommand : ICommand
     {

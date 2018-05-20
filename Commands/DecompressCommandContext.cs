@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace GzipAssessment.Commands
 {
@@ -8,34 +9,27 @@ namespace GzipAssessment.Commands
         {
         }
 
-        public override void Proceed()
-        {
-            StartProducer();
-
-            WorkDoneEvent.WaitOne();
-            BlockQueue.Close();
-        }
-
-        private void StartProducer()
+        public override void StartProducer()
         {
             var fs = ReadFile.Stream;
             var gzipHeaderMatches = 0;
-            List<byte> currentDataBlock = new List<byte>();
+            List<byte> currentDataBlockData = new List<byte>();
             int blockNumber = 0;
 
             byte[] initBuffer = new byte[Constants.GZipDefaultHeader.Length + 1];
             int currentStreamPosition = fs.Read(initBuffer, 0, Constants.GZipDefaultHeader.Length + 1); // read first file gzip header plus additional data byte
 
-            currentDataBlock.AddRange(initBuffer);
+            currentDataBlockData.AddRange(initBuffer);
 
             while (currentStreamPosition < ReadFile.FileLength)
             {
                 var currentByte = fs.ReadByte();
-                currentDataBlock.Add((byte) currentByte);
+                currentDataBlockData.Add((byte) currentByte);
 
                 if (currentStreamPosition == ReadFile.FileLength - 1) // last block of data
                 {
-                    BlockQueue.Enqueue(new ProcessingBlock(blockNumber, currentDataBlock.ToArray(), true));
+                    BlockQueue.Enqueue(new ProcessingBlock(blockNumber, currentDataBlockData.ToArray(), true));
+                    OnProgressChanged(new ProgressChangedEventArgs(100));
                     break;
                 }
 
@@ -43,14 +37,17 @@ namespace GzipAssessment.Commands
                 {
                     if (gzipHeaderMatches == Constants.GZipDefaultHeader.Length - 1)
                     {
-                        var nextBlockHeader = currentDataBlock.GetRange(
-                            currentDataBlock.Count - Constants.GZipDefaultHeader.Length,
+                        var nextBlockHeader = currentDataBlockData.GetRange(
+                            currentDataBlockData.Count - Constants.GZipDefaultHeader.Length,
                             Constants.GZipDefaultHeader.Length);
-                        currentDataBlock.RemoveRange(currentDataBlock.Count - Constants.GZipDefaultHeader.Length,
+                        currentDataBlockData.RemoveRange(currentDataBlockData.Count - Constants.GZipDefaultHeader.Length,
                             Constants.GZipDefaultHeader.Length); // we've found the beginning of the next block
-                        BlockQueue.Enqueue(new ProcessingBlock(blockNumber, currentDataBlock.ToArray(), false));
+                        BlockQueue.Enqueue(new ProcessingBlock(blockNumber, currentDataBlockData.ToArray(), false));
 
-                        currentDataBlock = nextBlockHeader;
+                        if (currentStreamPosition % 100 == 0)
+                            OnProgressChanged(new ProgressChangedEventArgs((int)(currentStreamPosition * 100.0 / ReadFile.FileLength)));
+
+                        currentDataBlockData = nextBlockHeader;
                         blockNumber++;
                         gzipHeaderMatches = 0;
                     }
