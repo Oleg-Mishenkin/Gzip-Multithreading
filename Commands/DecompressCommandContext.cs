@@ -5,7 +5,7 @@ namespace GzipAssessment.Commands
 {
     public class DecompressCommandContext : BaseCommandContext
     {
-        public DecompressCommandContext(int blockSize, int threadCount, string readFile, string writeFile) : base(blockSize, threadCount, readFile, writeFile)
+        public DecompressCommandContext(int blockSize, int threadCount, CommandLineArguments args) : base(blockSize, threadCount, args)
         {
         }
 

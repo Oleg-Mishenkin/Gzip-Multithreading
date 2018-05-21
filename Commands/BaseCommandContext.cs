@@ -7,18 +7,22 @@ namespace GzipAssessment.Commands
 {
     public abstract class BaseCommandContext : ICommandContext
     {
+        private readonly CommandLineArguments _args;
         private int _currentBlockIndex = -1;
         private ReadOnlyCollection<AutoResetEvent> _threadEvents;
         protected AutoResetEvent WorkDoneEvent = new AutoResetEvent(false);
 
-        public BaseCommandContext(int blockSize, int threadCount, string readFile, string writeFile)
+        public BaseCommandContext(int blockSize, int threadCount, CommandLineArguments args)
         {
-            ReadFile = new FileToRead(readFile);
-            WriteFile = new FileToWrite(writeFile);
+            _args = args;
+            ReadFile = new FileToRead(args.InputFile);
+            WriteFile = new FileToWrite(args.OutputFile);
             BlockSize = blockSize;
             BlockQueue = new BlockingQueue<ProcessingBlock>(Environment.ProcessorCount * 2); // let it be twice the number of threads
             InitThreadEvents(threadCount);
         }
+
+        public event EventHandler ProgressChanged;
 
         public FileToWrite WriteFile { get; private set; }
 
@@ -58,13 +62,23 @@ namespace GzipAssessment.Commands
 
         public void Proceed()
         {
+            InitCommands();
             StartProducer();
 
             WorkDoneEvent.WaitOne();
             BlockQueue.Close();
         }
 
-        public event EventHandler ProgressChanged;
+        private void InitCommands()
+        {
+            var command = CommandFactory.CreateCommand(this, _args);
+            for (int i = 0; i < _threadEvents.Count; i++)
+            {
+                var zipThread = new WorkThread(command);
+                zipThread.Start();
+            }
+
+        }
 
         protected void OnProgressChanged(ProgressChangedEventArgs eventArgs)
         {

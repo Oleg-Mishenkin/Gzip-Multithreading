@@ -42,16 +42,9 @@ namespace GzipAssessment
             {
                 executionContext.ProgressChanged += (sender, e) =>
                 {
-                    Console.SetCursorPosition(0, 1);
-                    Console.Out.Write("Completed " + ((ProgressChangedEventArgs)e).PercentageCompleted + "%"); };
-
-                var command = CommandFactory.CreateCommand(executionContext, arguments);
-                for (int i = 0; i < threadCount; i++)
-                {
-                    var zipThread = new WorkThread(command);
-                    zipThread.Start();
-                }
-
+                    Console.Out.Write("\rCompleted " + ((ProgressChangedEventArgs)e).PercentageCompleted + "%");
+                };
+                
                 executionContext.Proceed();
 
                 Console.Out.WriteLine();
