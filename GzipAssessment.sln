@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GzipAssessment", "GzipAssessment.csproj", "{730FB8D5-5F9F-4E13-91F8-71130EC498B9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GzipAssessment", "src\GzipAssessment\GzipAssessment.csproj", "{730FB8D5-5F9F-4E13-91F8-71130EC498B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GzipAssessment.Tests", "..\GzipAssessment.Tests\GzipAssessment.Tests.csproj", "{72F62973-48B2-46A4-B4FE-1BA6EDC91790}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GzipAssessment.Tests", "src\GzipAssessment.Tests\GzipAssessment.Tests.csproj", "{72F62973-48B2-46A4-B4FE-1BA6EDC91790}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
