@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GzipAssessment.Commands
+namespace GzipAssessment.DataFlow
 {
     public class ProgressChangedEventArgs : EventArgs
     {

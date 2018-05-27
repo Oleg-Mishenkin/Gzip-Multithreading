@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Security;
-using GzipAssessment.Commands;
+using GzipAssessment.DataFlow;
 
 namespace GzipAssessment
 {
@@ -23,10 +23,10 @@ namespace GzipAssessment
             switch (command)
             {
                 case "compress":
-                    Command = CommandType.Compress;
+                    DataFlow = DataFlowType.Compress;
                     break;
                 case "decompress":
-                    Command = CommandType.Decompress;
+                    DataFlow = DataFlowType.Decompress;
                     break;
                 default: throw new UserReadableException("Command should be either 'compress' or 'decompress'");
             }
@@ -61,7 +61,7 @@ namespace GzipAssessment
             OutputFile = outputFile;
         }
 
-        public CommandType Command { get; set; }
+        public DataFlowType DataFlow { get; set; }
 
         public string InputFile { get; set; }
 

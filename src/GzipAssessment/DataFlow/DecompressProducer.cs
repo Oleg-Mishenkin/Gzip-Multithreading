@@ -1,17 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace GzipAssessment.Commands
+namespace GzipAssessment.DataFlow
 {
-    public class DecompressCommandContext : BaseCommandContext
+    public class DecompressProducer : IProducer
     {
-        public DecompressCommandContext(int blockSize, int threadCount, CommandLineArguments args) : base(blockSize, threadCount, args)
+        private readonly DataFlowContext _context;
+
+        public DecompressProducer(DataFlowContext context)
         {
+            _context = context;
         }
 
-        public override void StartProducer()
+        public void StartProducing()
         {
-            var fs = ReadFile.Stream;
+            var fs = _context.ReadFile.Stream;
             var gzipHeaderMatches = 0;
             List<byte> currentDataBlockData = new List<byte>();
             int blockNumber = 0;
@@ -21,14 +24,14 @@ namespace GzipAssessment.Commands
 
             currentDataBlockData.AddRange(initBuffer);
 
-            while (currentStreamPosition < ReadFile.FileLength)
+            while (currentStreamPosition < _context.ReadFile.FileLength && !_context.IsExecutionStopped())
             {
                 var currentByte = fs.ReadByte();
                 currentDataBlockData.Add((byte) currentByte);
 
-                if (currentStreamPosition == ReadFile.FileLength - 1) // last block of data
+                if (currentStreamPosition == _context.ReadFile.FileLength - 1) // last block of data
                 {
-                    BlockQueue.Enqueue(new ProcessingBlock(blockNumber, currentDataBlockData.ToArray(), true));
+                    _context.BlockQueue.Enqueue(new ProcessingBlock(blockNumber, currentDataBlockData.ToArray(), true));
                     OnProgressChanged(new ProgressChangedEventArgs(100));
                     break;
                 }
@@ -42,10 +45,10 @@ namespace GzipAssessment.Commands
                             Constants.GZipDefaultHeader.Length);
                         currentDataBlockData.RemoveRange(currentDataBlockData.Count - Constants.GZipDefaultHeader.Length,
                             Constants.GZipDefaultHeader.Length); // we've found the beginning of the next block
-                        BlockQueue.Enqueue(new ProcessingBlock(blockNumber, currentDataBlockData.ToArray(), false));
+                        _context.BlockQueue.Enqueue(new ProcessingBlock(blockNumber, currentDataBlockData.ToArray(), false));
 
                         if (currentStreamPosition % 100 == 0)
-                            OnProgressChanged(new ProgressChangedEventArgs((int)(currentStreamPosition * 100.0 / ReadFile.FileLength)));
+                            OnProgressChanged(new ProgressChangedEventArgs((int)(currentStreamPosition * 100.0 / _context.ReadFile.FileLength)));
 
                         currentDataBlockData = nextBlockHeader;
                         blockNumber++;
@@ -62,6 +65,16 @@ namespace GzipAssessment.Commands
                 }
 
                 currentStreamPosition++;
+            }
+        }
+
+        public event EventHandler ProgressChanged;
+
+        private void OnProgressChanged(ProgressChangedEventArgs eventArgs)
+        {
+            if (ProgressChanged != null)
+            {
+                ProgressChanged(this, eventArgs);
             }
         }
     }

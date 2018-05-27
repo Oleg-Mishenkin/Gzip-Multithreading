@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using GzipAssessment.Commands;
+using GzipAssessment.DataFlow;
 using Xunit;
 
 namespace GzipAssessment.Tests
@@ -12,18 +12,10 @@ namespace GzipAssessment.Tests
         public void Compress_decompress_should_create_correct_zip_file()
         {
             var compressArguments = new CommandLineArguments(new[] {"compress", TestFile, "./result.zip"});
-            using (var executionContext =
-                CommandFactory.CreateCommandContext(Constants.BlockSize, 1, compressArguments))
-            {
-                executionContext.Proceed();
-            }
+            new DataFlowBuilder(compressArguments, 1).StartFlow();
 
             var decompressArguments = new CommandLineArguments(new[] {"decompress", "result.zip", "./result.csv"});
-            using (var executionContext =
-                CommandFactory.CreateCommandContext(Constants.BlockSize, 1, decompressArguments))
-            {
-                executionContext.Proceed();
-            }
+            new DataFlowBuilder(decompressArguments, 1).StartFlow();
 
             Assert.NotNull(new FileInfo("result.zip"));
             Assert.NotNull(new FileInfo("result.csv"));
